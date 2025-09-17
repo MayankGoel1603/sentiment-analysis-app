@@ -1,4 +1,4 @@
-# --- START OF FINAL, CORRECTED sentiment.py ---
+# --- START OF sentiment_core.py ---
 
 import streamlit as st
 import pandas as pd
@@ -8,56 +8,23 @@ from typing import List
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
 
-# Transformers for Free, Open-Source AI Model
-from transformers import pipeline
-
 # --- PAGE CONFIGURATION ---
-# Set the page configuration as the first Streamlit command
 st.set_page_config(
     page_title="Customer Review & Topic Analysis",
     page_icon="📊",
     layout="wide"
 )
 
-# --- MODEL AND STATE MANAGEMENT ---
+# --- STATE MANAGEMENT ---
 
 def initialize_session_state():
-    """Initialize all necessary session state variables for a multi-page app experience."""
+    """Initialize all necessary session state variables."""
     if 'screen' not in st.session_state:
         st.session_state.screen = 'upload'
     if 'cleaned_df' not in st.session_state:
         st.session_state.cleaned_df = None
     if 'model_results' not in st.session_state:
         st.session_state.model_results = None
-
-@st.cache_resource
-def get_summarizer():
-    """
-    Load and cache a powerful, free Hugging Face AI model.
-    This function runs only once, making subsequent runs much faster.
-    """
-    st.info("Please wait, loading AI model for the first time...")
-    # Using a more capable model for better, more accurate summarization
-    return pipeline("summarization", model="Falconsai/text_summarization")
-
-def get_ai_interpretation(keywords: List[str]) -> str:
-    """Get AI interpretation of topic keywords using a better, local model."""
-    try:
-        summarizer = get_summarizer()
-        keywords_str = ", ".join(keywords)
-        
-        # A more detailed prompt for higher quality results
-        prompt = f"""
-        As an expert product analyst, you are analyzing negative customer reviews.
-        The keywords from one of the main topics of complaints are: "{keywords_str}".
-        What is the specific problem or issue these customers are facing?
-        Summarize the core problem in one clear and actionable sentence.
-        """
-        
-        result = summarizer(prompt, max_length=60, min_length=10, do_sample=False)
-        return result[0]['summary_text'].strip()
-    except Exception as e:
-        return f"❌ Error during AI interpretation: {str(e)}"
 
 # --- UI SCREEN RENDERING ---
 
@@ -91,14 +58,9 @@ def render_upload_screen():
                     processed_df.columns = ['rating', 'review_text']
                     initial_rows = len(processed_df)
                     
-                    # --- THIS IS THE BUG FIX ---
-                    # 1. Drop rows with any missing values first
                     processed_df.dropna(inplace=True)
-                    # 2. Convert rating to numeric, turning errors into NaT (Not a Number)
                     processed_df['rating'] = pd.to_numeric(processed_df['rating'], errors='coerce')
-                    # 3. Drop any rows where the conversion to numeric failed
                     processed_df.dropna(subset=['rating'], inplace=True)
-                    # 4. Ensure review text is a string
                     processed_df['review_text'] = processed_df['review_text'].astype(str)
                     
                     st.session_state.cleaned_df = processed_df
@@ -135,7 +97,7 @@ def render_analysis_screen():
     top_n = col2.number_input("How many topics to find?", min_value=3, max_value=15, value=5)
 
     if st.button("🔍 Find Topics", type="primary"):
-        with st.spinner("Analyzing topics with NMF model... This may take a moment."):
+        with st.spinner("Analyzing topics with NMF model..."):
             if "Problems" in analysis_type:
                 filtered_df = df[df['rating'].isin([1, 2])]
                 analysis_title = "Main Problems & Challenges"
@@ -191,11 +153,9 @@ def render_results():
         col1.write(f"**Keywords:** `{', '.join(keywords)}`")
         col2.metric("Reviews in Topic", f"{review_count:,}")
         
-        with st.expander("🤖 Get AI Interpretation"):
-            interpretation = get_ai_interpretation(keywords)
-            st.info(f"💡 **AI Analysis:** {interpretation}")
-
-# --- MAIN APP LOGIC ---
+        # AI interpretation is temporarily disabled
+        # with st.expander("🤖 Get AI Interpretation"):
+        #     st.info("AI interpretation feature is under maintenance.")
 
 def main():
     """Main application function to control screen flow."""
@@ -209,3 +169,4 @@ if __name__ == '__main__':
     main()
 
 # --- END OF FILE ---
+
