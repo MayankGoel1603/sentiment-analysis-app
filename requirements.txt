@@ -1,15 +1,10 @@
-# --- Tell pip where to find the CPU-only version of Torch ---
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-# --- Framework ---
 streamlit==1.30.0
-
-# --- Core Scientific Stack (Known Stable Combination) ---
-numpy==1.24.4
 pandas==1.5.3
+numpy==1.24.4
 scikit-learn==1.3.2
-
-# --- AI and NLP Libraries ---
 torch==2.1.2
 transformers==4.35.2
 sentencepiece==0.1.99
+
